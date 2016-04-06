@@ -1,0 +1,20 @@
+// This is created by framework
+// Notes:
+//  - Top message is the main message structure we use, if you want to define
+//     some sub-messages, write them after the top message
+//  - Do not use 'requried' field
+
+package skull.service.dns;
+
+message query_resp {
+    // 0: OK
+    // 1: Error
+    optional int32  code  = 1 [default = 0];
+
+    // If code == 1, the detail error message will be filled
+    optional string error = 2;
+
+    // If code == 0, the ip of the requested domain will be filled
+    optional string ip    = 3;
+}
+

@@ -26,3 +26,12 @@
 *.exe
 *.out
 *.app
+
+# generated config wrapper files
+src/config.*
+#
+# # module lib folder
+lib/*
+#
+# # compiled file for ycm
+.ycm_extra_conf.pyc

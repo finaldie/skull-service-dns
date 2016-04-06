@@ -1,0 +1,17 @@
+// This is created by framework
+// Notes:
+//  - Do not change the package and top message name
+//  - Top message is the main message structure we use, if you want to define
+//     some sub-messages, write them after the top message
+
+package skull.service.dns;
+
+message query_req {
+    optional string domain      = 1;
+
+    // Possible values:
+    //  0: roundrobin (by default)
+    //
+    // Notes: If not specified, would use the default strategy
+    optional int32  strategy    = 2;
+}

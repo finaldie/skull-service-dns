@@ -1,5 +1,5 @@
 # skull-service-dns
-This is an example skull service for building a Async DNS client.
+This is an example of skull service for building a Async DNS client.
 
 ----
 ## Main Features:

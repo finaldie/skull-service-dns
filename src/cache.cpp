@@ -278,14 +278,16 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
     unsigned char* query = NULL;
     int query_len = 0;
 
-    int ret = ares_create_query(domain.c_str(),
+    // To backward compatible, here we use `ares_mkquery`, if your
+    //  platform support higher version of ares, then recommend to use
+    //  `ares_create_query`
+    int ret = ares_mkquery(domain.c_str(),
                                 ns_c_in,     // Internet class
                                 ns_t_a,      // ipv4 address
                                 0,           // identifier
                                 1,           // recursion is desired
                                 &query,
-                                &query_len,
-                                65535);
+                                &query_len);
 
     if (ret != ARES_SUCCESS) {
         SKULLCPP_LOG_ERROR("svc.dns.query-2", "create dns query failed: "

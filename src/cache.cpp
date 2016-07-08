@@ -83,7 +83,7 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     auto& queryResp = (query_resp&)apiData.response();
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
-        SKULL_LOG_ERROR("svc.dns.query-3",
+        SKULLCPP_LOG_ERROR("svc.dns.query-3",
                         "dns query failed due to network issue",
                         "Check network or dns server status");
 
@@ -104,8 +104,9 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     if (r != ARES_SUCCESS) {
         std::cout << "dns parse reply failed: " << ares_strerror(r) << std::endl;
 
-        SKULL_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: %s. domain: %s",
-            ares_strerror(r), queryReq.domain().c_str(),
+        SKULLCPP_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: "
+            << ares_strerror(r)
+            << " domain: " << queryReq.domain(),
             "Check whether queried domain is correct");
 
         queryResp.set_code(1);
@@ -155,7 +156,7 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
               << std::endl;
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
-        SKULL_LOG_ERROR("svc.dns.query-3",
+        SKULLCPP_LOG_ERROR("svc.dns.query-3",
                         "dns query failed due to network issue",
                         "Check network or dns server status");
         return;
@@ -173,8 +174,9 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
     if (r != ARES_SUCCESS) {
         std::cout << "dns parse reply failed: " << ares_strerror(r) << std::endl;
 
-        SKULL_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: %s, domain: %s",
-            ares_strerror(r), domain->c_str(),
+        SKULLCPP_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: "
+            << ares_strerror(r)
+            << " domain: " << domain,
             "Check whether queried domain is correct");
         return;
     }
@@ -286,8 +288,8 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
                                 65535);
 
     if (ret != ARES_SUCCESS) {
-        SKULL_LOG_ERROR("svc.dns.query-2", "create dns query failed: %s",
-                        ares_strerror(ret), "Check whether queried domain is correct");
+        SKULLCPP_LOG_ERROR("svc.dns.query-2", "create dns query failed: "
+            << ares_strerror(ret), "Check whether queried domain is correct");
         std::cout << "create dns query failed: " << ares_strerror(ret) << std::endl;
         ares_free_string(query);
         return false;

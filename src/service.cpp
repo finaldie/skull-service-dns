@@ -31,10 +31,6 @@ static
 void skull_service_release(skullcpp::Service& service)
 {
     skull_static_config_destroy();
-
-    adns::Cache* dnsCache = (adns::Cache*)service.get();
-    delete dnsCache;
-
     printf("skull service release\n");
 }
 
@@ -45,7 +41,7 @@ void skull_service_query(const skullcpp::Service& service,
                          google::protobuf::Message& response)
 {
     std::cout << "skull service api: query" << std::endl;
-    SKULL_LOG_INFO("svc.dns.query-1", "service api: query");
+    SKULLCPP_LOG_INFO("svc.dns.query-1", "service api: query");
 
     const adns::Cache* dnsCache = (const adns::Cache*)service.get();
     auto& queryReq = (const query_req&)request;
@@ -55,7 +51,7 @@ void skull_service_query(const skullcpp::Service& service,
     const std::string ip = dnsCache->queryFromCache(service, queryReq.domain());
 
     if (ip.empty()) {
-        SKULL_LOG_ERROR("svc.dns.query-2", "dns query from cache failed",
+        SKULLCPP_LOG_ERROR("svc.dns.query-2", "dns query from cache failed",
                         "Will query it from dns servers");
         printf("dns query from cache failed\n");
     } else {
@@ -67,7 +63,7 @@ void skull_service_query(const skullcpp::Service& service,
     // Try query it from DNS
     bool res = dnsCache->queryFromDNS(service, queryReq.domain(), false);
     if (!res) {
-        SKULL_LOG_ERROR("svc.dns.query-3", "dns query from dns failed",
+        SKULLCPP_LOG_ERROR("svc.dns.query-3", "dns query from dns failed",
                         "Check whether the name server is correct");
         queryResp.set_code(1);
         queryResp.set_error("query dns error");

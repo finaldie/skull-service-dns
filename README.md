@@ -12,7 +12,7 @@ This is an example of skull service for building a Async DNS client.
 ## How to use it?
 1. cd $project_root/src/services
 1. git clone $this_repo dns
-1. Use `skull service import dns` to load this into your skull project
+1. Use `skull service --import dns` to load this into your skull project
 
 ## Screen Output
 ```console

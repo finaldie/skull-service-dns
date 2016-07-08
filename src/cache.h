@@ -12,7 +12,7 @@
 
 namespace adns {
 
-class Cache {
+class Cache : public skullcpp::ServiceData {
 public:
     typedef struct DnsRecords {
         time_t start_;

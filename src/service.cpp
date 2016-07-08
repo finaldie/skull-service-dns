@@ -56,7 +56,7 @@ void skull_service_query(const skullcpp::Service& service,
 
     if (ip.empty()) {
         SKULL_LOG_ERROR("svc.dns.query-2", "dns query from cache failed",
-                        "Check whether queried domain is correct");
+                        "Will query it from dns servers");
         printf("dns query from cache failed\n");
     } else {
         queryResp.set_code(0);

@@ -18,9 +18,7 @@ static
 void skull_service_init(skullcpp::Service& service, const skull_config_t* config)
 {
     printf("skull service init\n");
-
-    // 1. Convert skull_config to skull_static_config
-    skull_static_config_convert(config);
+    skullcpp::Config::instance().load(config);
 
     // 2. Init Cache
     adns::Cache* dnsCache = new adns::Cache();
@@ -30,7 +28,6 @@ void skull_service_init(skullcpp::Service& service, const skull_config_t* config
 static
 void skull_service_release(skullcpp::Service& service)
 {
-    skull_static_config_destroy();
     printf("skull service release\n");
 }
 

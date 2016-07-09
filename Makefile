@@ -25,7 +25,6 @@ TEST_DEPS_LIBS += \
 # Objs and deployment related items
 SRCS = \
     src/service.cpp \
-    src/config.cpp \
     src/cache.cpp
 
 TEST_SRCS = \

@@ -307,8 +307,8 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
 
     auto queryDomain = std::make_shared<std::string>(domain);
     auto epCb = updateOnly
-                    ? skull_BindEp(_ep_cb_updateonly, queryDomain)
-                    : skull_BindEp(_ep_cb, queryDomain);
+                    ? skull_BindEpCb(_ep_cb_updateonly, queryDomain)
+                    : skull_BindEpCb(_ep_cb, queryDomain);
 
     skullcpp::EPClient::Status st = epClient.send(service, query,
                                         (size_t)query_len,

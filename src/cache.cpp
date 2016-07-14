@@ -72,6 +72,9 @@ static
 void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
             std::shared_ptr<std::string>& domain)
 {
+    // TODO:
+    //  need double verify whether really needs to query dns server
+
     // 1. Prepare and validate ep status
     std::cout << "dns _ep_cb: response len: " << ret.responseSize()
               << ", status: " << ret.status()
@@ -141,7 +144,7 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     }
 
     // 4. Update it via a service job
-    service.createJob(0, 0, skull_BindSvc(_dnsrecord_updating, jobData));
+    service.createJob(0, 0, skull_BindSvcJobNP(_dnsrecord_updating, jobData));
 }
 
 static
@@ -197,7 +200,7 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
     }
 
     // 4. Update it via a service job
-    service.createJob(0, 0, skull_BindSvc(_dnsrecord_updating, jobData));
+    service.createJob(0, 0, skull_BindSvcJobNP(_dnsrecord_updating, jobData));
 }
 
 static
@@ -263,9 +266,9 @@ const std::string Cache::queryFromCache(const skullcpp::Service& service,
         return std::string(ip);
     }
 
-    // If not found, create a job to query dns, then return the 1st one
+    // If not found, create a nopending job to query dns, then return the 1st one
     auto queryDomain = std::make_shared<std::string>(domain);
-    service.createJob(0, 0, skull_BindSvc(_refresh_domain_records, queryDomain));
+    service.createJob(0, 0, skull_BindSvcJobNP(_refresh_domain_records, queryDomain));
 
     char ip [IPV4_MAX_LENGTH];
     inet_ntop(AF_INET, &records.records_[0], ip, IPV4_MAX_LENGTH);

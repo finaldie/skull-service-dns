@@ -19,8 +19,8 @@ TEST_DEPS_LIBS += \
     -lresolv \
     -lprotobuf \
     -lskull-common-cpp \
-    -lskull-unittest-c \
-    -lskull-unittest-cpp
+    -lskull-unittest-cpp \
+    -lskull-unittest-c
 
 # Objs and deployment related items
 SRCS = \

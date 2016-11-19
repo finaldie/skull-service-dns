@@ -19,6 +19,14 @@ public:
         std::vector<ares_addrttl> records_;
     } DnsRecords;
 
+    // Well formatted record
+    typedef struct rDnsRecord {
+        std::string ip;
+        int         ttl;
+    } rDnsRecords;
+
+    typedef std::vector<rDnsRecord> RDnsRecordVec;
+
 private:
     // domain <--> record
     std::map<std::string, DnsRecords> records_;
@@ -31,8 +39,9 @@ public:
     ~Cache();
 
 public:
-    const std::string queryFromCache(const skullcpp::Service& service,
-                                     const std::string& domain) const;
+    void queryFromCache(const skullcpp::Service& service,
+                        const std::string& domain,
+                        RDnsRecordVec& rRecords) const;
 
     bool queryFromDNS(const skullcpp::Service& service,
                       const std::string& domain, bool updateOnly) const;
@@ -42,6 +51,7 @@ public:
 
 private:
     void initNameServers();
+
     const std::string& getNameServerIP() const;
 };
 

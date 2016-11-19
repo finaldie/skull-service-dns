@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <string>
+#include <vector>
 #include <iostream>
 #include <google/protobuf/message.h>
 
@@ -17,7 +18,6 @@ using namespace skull::service::dns;
 static
 void skull_service_init(skullcpp::Service& service, const skull_config_t* config)
 {
-    printf("skull service init\n");
     skullcpp::Config::instance().load(config);
 
     // 2. Init Cache
@@ -28,7 +28,6 @@ void skull_service_init(skullcpp::Service& service, const skull_config_t* config
 static
 void skull_service_release(skullcpp::Service& service)
 {
-    printf("skull service release\n");
 }
 
 // ====================== Service APIs Calls ===================================
@@ -37,28 +36,34 @@ void skull_service_query(const skullcpp::Service& service,
                          const google::protobuf::Message& request,
                          google::protobuf::Message& response)
 {
-    std::cout << "skull service api: query" << std::endl;
-    SKULLCPP_LOG_INFO("svc.dns.query-1", "service api: query");
+    SKULLCPP_LOG_DEBUG("service api: query");
 
     const adns::Cache* dnsCache = (const adns::Cache*)service.get();
-    auto& queryReq = (const query_req&)request;
+    auto& queryReq  = (const query_req&)request;
     auto& queryResp = (query_resp&)response;
 
     // Try query it from cache first
-    const std::string ip = dnsCache->queryFromCache(service, queryReq.domain());
+    adns::Cache::RDnsRecordVec records;
+    dnsCache->queryFromCache(service, queryReq.question(), records);
 
-    if (ip.empty()) {
-        SKULLCPP_LOG_ERROR("svc.dns.query-2", "dns query from cache failed",
-                        "Will query it from dns servers");
-        printf("dns query from cache failed\n");
+    if (records.empty()) {
+        SKULLCPP_LOG_INFO("QueryCache", "Question not found in cache: "
+                          << queryReq.question() << " "
+                          << "Will query it from dns servers");
     } else {
         queryResp.set_code(0);
-        queryResp.set_ip(ip);
+
+        for (auto& record : records) {
+            auto* ret = queryResp.add_record();
+            ret->set_ip(record.ip);
+            ret->set_ttl(record.ttl);
+        }
+
         return;
     }
 
     // Try query it from DNS
-    bool res = dnsCache->queryFromDNS(service, queryReq.domain(), false);
+    bool res = dnsCache->queryFromDNS(service, queryReq.question(), false);
     if (!res) {
         SKULLCPP_LOG_ERROR("svc.dns.query-3", "dns query from dns failed",
                         "Check whether the name server is correct");

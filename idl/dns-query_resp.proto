@@ -9,12 +9,17 @@ package skull.service.dns;
 message query_resp {
     // 0: OK
     // 1: Error
-    optional int32  code  = 1 [default = 0];
+    optional int32  code   = 1 [default = 0];
 
     // If code == 1, the detail error message will be filled
-    optional string error = 2;
+    optional string error  = 2;
 
     // If code == 0, the ip of the requested domain will be filled
-    optional string ip    = 3;
+    repeated Record record = 3;
+}
+
+message Record {
+    optional string ip  = 1;
+    optional int32  ttl = 2;
 }
 

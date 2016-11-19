@@ -6,8 +6,8 @@ This is an example of skull service for building a Async DNS client.
 - [x] Fully Async DNS Query
 - [x] Implemented a simple local cache(not LRU)
 - [x] Support loading /etc/resolv.conf
-- [ ]  Support loading /etc/hosts
-- [ ]  Build a LRU cache
+- [ ] Support loading /etc/hosts
+- [ ] Build a LRU cache
 
 ## How to use it?
 1. Install the dependence package: `libc-ares-dev` (In Ubuntu: `apt-get install libc-ares-dev`)

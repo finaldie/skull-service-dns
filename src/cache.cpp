@@ -11,7 +11,7 @@
 
 using namespace skull::service::dns;
 
-#define MAX_DNS_REPLY_ADDRS 10
+#define MAX_DNS_REPLY_ADDRS 100
 #define IPV4_MAX_LENGTH     16
 #define MAX_RECORD_EXPIRED_TIME 2  // unit: second
 
@@ -57,15 +57,15 @@ void _dnsrecord_updating(skullcpp::Service& service,
     adns::Cache::DnsRecords& records = jobData->records();
 
     dnsCache->updateCache(service, domain, records);
-    std::cout << "_dnsrecord_updating done, domain: " << domain << std::endl;
+    SKULLCPP_LOG_INFO("RecordUpdating", "dnsrecord_updating done, domain: " << domain);
 }
 
 // dns callback functions
 static
-size_t _dns_reply_unpack(const void* data, size_t len)
+ssize_t _dns_reply_unpack(const void* data, size_t len)
 {
-    std::cout << "ep dns _unpack len: " << len << std::endl;
-    return len;
+    SKULLCPP_LOG_DEBUG("EPClient dns _unpack len: " << len);
+    return (ssize_t)len;
 }
 
 static
@@ -76,10 +76,9 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     //  need double verify whether really needs to query dns server
 
     // 1. Prepare and validate ep status
-    std::cout << "dns _ep_cb: response len: " << ret.responseSize()
-              << ", status: " << ret.status()
-              << ", latency: " << ret.latency()
-              << std::endl;
+    SKULLCPP_LOG_DEBUG("dns _ep_cb: response len: " << ret.responseSize()
+                       << ", status: " << ret.status()
+                       << ", latency: " << ret.latency());
 
     auto& apiData   = ret.apiData();
     auto& queryReq  = (const query_req&)apiData.request();
@@ -105,20 +104,18 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
                                NULL, addrs, &naddrs);
 
     if (r != ARES_SUCCESS) {
-        std::cout << "dns parse reply failed: " << ares_strerror(r) << std::endl;
-
         SKULLCPP_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: "
             << ares_strerror(r)
-            << " domain: " << queryReq.domain(),
+            << " domain: " << queryReq.question(),
             "Check whether queried domain is correct");
 
         queryResp.set_code(1);
         queryResp.set_error("Dns query failed, check whether domain is correct");
-
         return;
+    } else {
+        SKULLCPP_LOG_DEBUG("Got " << naddrs << " dns records");
     }
 
-    std::cout << "got " << naddrs << "dns replies" << std::endl;
     if (!naddrs) {
         queryResp.set_code(1);
         queryResp.set_error("Dns query failed, no ip returned");
@@ -127,20 +124,20 @@ void _ep_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
 
     // 3. Fill the api response
     queryResp.set_code(0);
-    bool filled = false;
-    auto jobData = std::make_shared<UpdateJobdata>(queryReq.domain());
+    auto jobData = std::make_shared<UpdateJobdata>(queryReq.question());
 
     for (int i = 0; i < naddrs; i++) {
+        // 1. Fill jobData for updating the cache
         char ip [IPV4_MAX_LENGTH];
         inet_ntop(AF_INET, &addrs[i].ipaddr, ip, IPV4_MAX_LENGTH);
-        printf(" - ip: %s; ttl: %d\n", ip, addrs[i].ttl);
         jobData->append(addrs[i]);
 
-        if (!filled) {
-            // Fill ip
-            queryResp.set_ip(ip);
-            filled = true;
-        }
+        SKULLCPP_LOG_DEBUG(" - ip: " << ip << "; ttl: " << addrs[i].ttl);
+
+        // 2. Fill the service response
+        auto* record = queryResp.add_record();
+        record->set_ip(ip);
+        record->set_ttl(addrs[i].ttl);
     }
 
     // 4. Update it via a service job
@@ -153,10 +150,10 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
                        std::shared_ptr<std::string>& domain)
 {
     // 1. Prepare and validate ep status
-    std::cout << "dns _ep_cb_updateonly: response len: " << ret.responseSize()
-              << ", status: " << ret.status()
-              << ", latency: " << ret.latency()
-              << std::endl;
+    SKULLCPP_LOG_DEBUG("dns _ep_cb_updateonly: response len: "
+              << ret.responseSize()
+              << ", status: "  << ret.status()
+              << ", latency: " << ret.latency());
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
         SKULLCPP_LOG_ERROR("svc.dns.query-3",
@@ -175,16 +172,15 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
                                NULL, addrs, &naddrs);
 
     if (r != ARES_SUCCESS) {
-        std::cout << "dns parse reply failed: " << ares_strerror(r) << std::endl;
-
         SKULLCPP_LOG_ERROR("svc.dns.query-4", "dns parse reply failed: "
             << ares_strerror(r)
             << " domain: " << domain,
             "Check whether queried domain is correct");
         return;
+    } else {
+        SKULLCPP_LOG_DEBUG("Got " << naddrs << " dns replies");
     }
 
-    std::cout << "got " << naddrs << "dns replies" << std::endl;
     if (!naddrs) {
         return;
     }
@@ -195,8 +191,9 @@ void _ep_cb_updateonly(const skullcpp::Service& service,
     for (int i = 0; i < naddrs; i++) {
         char ip [IPV4_MAX_LENGTH];
         inet_ntop(AF_INET, &addrs[i].ipaddr, ip, IPV4_MAX_LENGTH);
-        printf(" - ip: %s; ttl: %d\n", ip, addrs[i].ttl);
         jobData->append(addrs[i]);
+
+        SKULLCPP_LOG_DEBUG(" - ip: " << ip << "; ttl: " << addrs[i].ttl);
     }
 
     // 4. Update it via a service job
@@ -210,9 +207,10 @@ void _refresh_domain_records(skullcpp::Service& service,
 
     bool ret = dnsCache->queryFromDNS(service, *domain, true);
     if (!ret) {
-        std::cout << "_refresh_domain_records: query domain failed" << std::endl;
+        SKULLCPP_LOG_ERROR("RefreshRecords", "Query domain failed: " << domain,
+                           "Check the internet connection");
     } else {
-        std::cout << "_refresh_domain_records: query domain success" << std::endl;
+        SKULLCPP_LOG_INFO("RefreshRecords", "Query domain success: " << domain);
     }
 }
 
@@ -222,7 +220,8 @@ Cache::Cache() {
     // 1. Init ares library
     int ret = ares_library_init(ARES_LIB_INIT_ALL);
     if (ret) {
-        printf("Init ares library failed: %s\n", ares_strerror(ret));
+        SKULLCPP_LOG_FATAL("Init", "Init ares library failed: "
+                           << ares_strerror(ret), "");
         exit(1);
     }
 
@@ -237,18 +236,19 @@ Cache::~Cache() {
     ares_library_cleanup();
 }
 
-const std::string Cache::queryFromCache(const skullcpp::Service& service,
-                                        const std::string& domain) const {
+void Cache::queryFromCache(const skullcpp::Service& service,
+                           const std::string& domain,
+                           RDnsRecordVec& rRecords) const {
     auto it = this->records_.find(domain);
     if (it == this->records_.end()) {
-        return "";
+        return;
     }
 
     // Reture the 1st unexpired record
     const DnsRecords& records = it->second;
     size_t nrec = records.records_.size();
     if (!nrec) {
-        return "";
+        return;
     }
 
     time_t now = time(NULL);
@@ -263,20 +263,25 @@ const std::string Cache::queryFromCache(const skullcpp::Service& service,
 
         char ip [IPV4_MAX_LENGTH];
         inet_ntop(AF_INET, &addr, ip, IPV4_MAX_LENGTH);
-        return std::string(ip);
+
+        int newTTL = ttl - (int)(now - records.start_);
+        rDnsRecord rRecord;
+        rRecord.ip  = ip;
+        rRecord.ttl = newTTL;
+        rRecords.push_back(rRecord);
     }
 
-    // If not found, create a nopending job to query dns, then return the 1st one
-    auto queryDomain = std::make_shared<std::string>(domain);
-    service.createJob(0, 0, skull_BindSvcJobNPW(_refresh_domain_records, queryDomain), NULL);
+    //// If not found, create a nopending job to query dns, then return the 1st one
+    //auto queryDomain = std::make_shared<std::string>(domain);
+    //service.createJob(0, 0, skull_BindSvcJobNPW(_refresh_domain_records, queryDomain), NULL);
 
-    char ip [IPV4_MAX_LENGTH];
-    inet_ntop(AF_INET, &records.records_[0], ip, IPV4_MAX_LENGTH);
-    return std::string(ip);
+    //char ip [IPV4_MAX_LENGTH];
+    //inet_ntop(AF_INET, &records.records_[0], ip, IPV4_MAX_LENGTH);
+    //return std::string(ip);
 }
 
 bool Cache::queryFromDNS(const skullcpp::Service& service,
-                      const std::string& domain, bool updateOnly) const {
+                         const std::string& domain, bool updateOnly) const {
     // Create a simple internet query for ipv4 address and recursion is desired
     unsigned char* query = NULL;
     int query_len = 0;
@@ -285,17 +290,16 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
     //  platform support higher version of ares, then recommend to use
     //  `ares_create_query`
     int ret = ares_mkquery(domain.c_str(),
-                                ns_c_in,     // Internet class
-                                ns_t_a,      // ipv4 address
-                                0,           // identifier
-                                1,           // recursion is desired
-                                &query,
-                                &query_len);
+                           ns_c_in,     // Internet class
+                           ns_t_a,      // ipv4 address
+                           0,           // identifier
+                           1,           // recursion is desired
+                           &query,
+                           &query_len);
 
     if (ret != ARES_SUCCESS) {
         SKULLCPP_LOG_ERROR("svc.dns.query-2", "create dns query failed: "
             << ares_strerror(ret), "Check whether queried domain is correct");
-        std::cout << "create dns query failed: " << ares_strerror(ret) << std::endl;
         ares_free_string(query);
         return false;
     }
@@ -313,9 +317,9 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
                     ? skull_BindEpCb(_ep_cb_updateonly, queryDomain)
                     : skull_BindEpCb(_ep_cb, queryDomain);
 
-    skullcpp::EPClient::Status st = epClient.send(service, query,
-                                        (size_t)query_len,
-                                        epCb);
+    skullcpp::EPClient::Status st =
+        epClient.send(service, query, (size_t)query_len, epCb);
+
     ares_free_string(query);
     if (st != skullcpp::EPClient::Status::OK) {
         return false;
@@ -341,7 +345,7 @@ void Cache::updateCache(skullcpp::Service& service, const std::string& domain,
 
 void Cache::initNameServers() {
     if (_res.nscount == 0) {
-        std::cout << "Not found any name server, exit" << std::endl;
+        SKULLCPP_LOG_FATAL("Init", "Not found any name server, exit", "");
         exit(1);
     }
 
@@ -349,7 +353,7 @@ void Cache::initNameServers() {
         char ip [IPV4_MAX_LENGTH];
         inet_ntop(AF_INET, &_res.nsaddr_list[i].sin_addr, ip, IPV4_MAX_LENGTH);
 
-        std::cout << "init name server: " << ip << std::endl;
+        SKULLCPP_LOG_INFO("Init", "init name server: " << ip << std::endl)
         this->nservers_.push_back(ip);
     }
 }

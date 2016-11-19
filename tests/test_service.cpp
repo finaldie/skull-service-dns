@@ -22,7 +22,7 @@ void test_nocache()
     // 2. construct api request message
     skull::service::dns::query_resp apiResp;
     skull::service::dns::query_req apiReq;
-    apiReq.set_domain("www.google.com");
+    apiReq.set_question("www.google.com");
 
     // 3. Run service
     utSvc.run("query", apiReq, apiResp);
@@ -30,7 +30,7 @@ void test_nocache()
     // 4. validate api response data
     SKULL_CUNIT_ASSERT(apiResp.has_code() == false);
     SKULL_CUNIT_ASSERT(apiResp.has_error() == false);
-    SKULL_CUNIT_ASSERT(apiResp.has_ip() == false);
+    SKULL_CUNIT_ASSERT(apiResp.record_size() == 0);
 }
 
 int main(int argc, char** argv)

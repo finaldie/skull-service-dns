@@ -1,7 +1,6 @@
 #ifndef ASYNC_DNSCLIENT_CACHE_H
 #define ASYNC_DNSCLIENT_CACHE_H
 
-#include <ares.h>
 #include <time.h>
 
 #include <string>
@@ -14,22 +13,28 @@ namespace adns {
 
 class Cache : public skullcpp::ServiceData {
 public:
-    typedef struct DnsRecords {
-        time_t start_;
-        std::vector<ares_addrttl> records_;
-    } DnsRecords;
+    typedef enum QType {
+        A    = 1,
+        AAAA = 2
+    } QType;
 
     // Well formatted record
-    typedef struct rDnsRecord {
+    typedef struct RDnsRecord {
         std::string ip;
         int         ttl;
     } rDnsRecords;
 
-    typedef std::vector<rDnsRecord> RDnsRecordVec;
+    typedef std::vector<RDnsRecord> RDnsRecordVec;
+
+    typedef struct DnsRecords {
+        time_t start_;
+        RDnsRecordVec records_;
+    } DnsRecords;
 
 private:
     // domain <--> record
-    std::map<std::string, DnsRecords> records_;
+    std::map<std::string, DnsRecords> recordsA_;
+    std::map<std::string, DnsRecords> records4A_;
 
     // name servers
     std::vector<std::string> nservers_;
@@ -41,13 +46,14 @@ public:
 public:
     void queryFromCache(const skullcpp::Service& service,
                         const std::string& domain,
+                        QType qtype,
                         RDnsRecordVec& rRecords) const;
 
     bool queryFromDNS(const skullcpp::Service& service,
-                      const std::string& domain, bool updateOnly) const;
+                      const std::string& domain, QType qtype) const;
 
     void updateCache(skullcpp::Service& service, const std::string& domain,
-                     DnsRecords& records);
+                     QType qtype, DnsRecords& records);
 
 private:
     void initNameServers();

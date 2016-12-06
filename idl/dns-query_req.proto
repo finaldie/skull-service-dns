@@ -6,7 +6,7 @@
 
 package skull.service.dns;
 
-// Currently only support A type
 message query_req {
     optional string question = 1;
+    optional int32  qtype    = 2; // 1: A, 2: AAAA
 }

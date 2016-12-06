@@ -42,9 +42,12 @@ void skull_service_query(const skullcpp::Service& service,
     auto& queryReq  = (const query_req&)request;
     auto& queryResp = (query_resp&)response;
 
+    adns::Cache::QType qtype = queryReq.qtype() == 1
+        ? adns::Cache::QType::A : adns::Cache::QType::AAAA;
+
     // Try query it from cache first
     adns::Cache::RDnsRecordVec records;
-    dnsCache->queryFromCache(service, queryReq.question(), records);
+    dnsCache->queryFromCache(service, queryReq.question(), qtype, records);
 
     if (records.empty()) {
         SKULLCPP_LOG_INFO("QueryCache", "Question not found in cache: "
@@ -63,7 +66,7 @@ void skull_service_query(const skullcpp::Service& service,
     }
 
     // Try query it from DNS
-    bool res = dnsCache->queryFromDNS(service, queryReq.question(), false);
+    bool res = dnsCache->queryFromDNS(service, queryReq.question(), qtype);
     if (!res) {
         SKULLCPP_LOG_ERROR("svc.dns.query-3", "dns query from dns failed",
                         "Check whether the name server is correct");

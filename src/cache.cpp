@@ -211,7 +211,7 @@ void _dns6_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     for (int i = 0; i < naddrs; i++) {
         // 1. Fill jobData for updating the cache
         char ip [INET6_ADDRSTRLEN];
-        inet_ntop(AF_INET, &addrs[i].ip6addr, ip, INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, &addrs[i].ip6addr, ip, INET6_ADDRSTRLEN);
 
         adns::Cache::RDnsRecord rRecord;
         rRecord.ip = ip;
@@ -294,16 +294,18 @@ void Cache::queryFromCache(const skullcpp::Service& service,
 }
 
 bool Cache::queryFromDNS(const skullcpp::Service& service,
-                         const std::string& domain, QType qtype) const {
+                         const std::string& question, QType qtype) const {
     // Create a simple internet query for ipv4 address and recursion is desired
     unsigned char* query = NULL;
     int query_len = 0;
     __ns_type type = qtype == QType::A ? ns_t_a : ns_t_aaaa;
+    SKULLCPP_LOG_DEBUG("Got question: " << question << ", "
+                       << "qtype: " << qtype);
 
     // To backward compatible, here we use `ares_mkquery`, if your
     //  platform support higher version of ares, then recommend to use
     //  `ares_create_query`
-    int ret = ares_mkquery(domain.c_str(),
+    int ret = ares_mkquery(question.c_str(),
                            ns_c_in,     // Internet class
                            type,        // A or AAAA
                            0,           // identifier
@@ -326,7 +328,7 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
     epClient.setTimeout(1000);
     epClient.setUnpack(_dns_reply_unpack);
 
-    auto queryDomain = std::make_shared<std::string>(domain);
+    auto queryDomain = std::make_shared<std::string>(question);
     auto epCb = qtype == QType::A
             ? skull_BindEpCb(_dns_resp_cb,  queryDomain, qtype)
             : skull_BindEpCb(_dns6_resp_cb, queryDomain, qtype);

@@ -90,7 +90,7 @@ void _dns_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
         SKULLCPP_LOG_ERROR("svc.dns.query-3",
-            "Dns query failed due to network issue: " << domain,
+            "Dns query failed due to network issue: " << *domain,
             "Check network or dns server status");
 
         queryResp.set_code(1);
@@ -168,7 +168,7 @@ void _dns6_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
         SKULLCPP_LOG_ERROR("svc.dns6.query-3",
-            "Dns query failed due to network issue: " << domain,
+            "Dns query failed due to network issue: " << *domain,
             "Check network or dns server status");
 
         queryResp.set_code(1);

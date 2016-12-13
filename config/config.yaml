@@ -1,1 +1,2 @@
 load_resolv_conf: true
+query_timeout: 2000 # unit milliseconds

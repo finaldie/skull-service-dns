@@ -8,12 +8,12 @@
 #include <memory>
 
 #include "cache.h"
+#include "config.h"
 #include "skull_protos.h"
 
 using namespace skull::service::dns;
 
 #define MAX_DNS_REPLY_ADDRS 100
-#define MAX_RECORD_EXPIRED_TIME 2  // unit: second
 
 // ====================== Internal Functions ===================================
 class UpdateJobdata {
@@ -90,7 +90,8 @@ void _dns_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
         SKULLCPP_LOG_ERROR("svc.dns.query-3",
-            "Dns query failed due to network issue: " << *domain,
+            "Dns query failed due to network issue: " << *domain
+            << ", status: " << ret.status(),
             "Check network or dns server status");
 
         queryResp.set_code(1);
@@ -150,7 +151,7 @@ void _dns_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     }
 
     // 4. Update it via a service job
-    service.createJob(0, 0, skull_BindSvcJobNPW(_dnsrecord_updating, jobData), NULL);
+    service.createJob(0, -1, skull_BindSvcJobNPW(_dnsrecord_updating, jobData), NULL);
 }
 
 static
@@ -168,7 +169,8 @@ void _dns6_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
 
     if (ret.status() != skullcpp::EPClient::Status::OK) {
         SKULLCPP_LOG_ERROR("svc.dns6.query-3",
-            "Dns query failed due to network issue: " << *domain,
+            "Dns query failed due to network issue: " << *domain
+            << ", status: " << ret.status(),
             "Check network or dns server status");
 
         queryResp.set_code(1);
@@ -228,7 +230,7 @@ void _dns6_resp_cb(const skullcpp::Service& service, skullcpp::EPClientRet& ret,
     }
 
     // 4. Update it via a service job
-    service.createJob(0, 0, skull_BindSvcJobNPW(_dnsrecord_updating, jobData), NULL);
+    service.createJob(0, -1, skull_BindSvcJobNPW(_dnsrecord_updating, jobData), NULL);
 }
 
 namespace adns {
@@ -321,11 +323,14 @@ bool Cache::queryFromDNS(const skullcpp::Service& service,
     }
 
     // Create EPClient to send the query string to DNS server
+    const auto& conf = skullcpp::Config::instance();
+    SKULLCPP_LOG_DEBUG("conf.query_timeout: " << conf.query_timeout());
+
     skullcpp::EPClient epClient;
     epClient.setType(skullcpp::EPClient::UDP);
     epClient.setIP(getNameServerIP());
     epClient.setPort(53);
-    epClient.setTimeout(1000);
+    epClient.setTimeout(conf.query_timeout());
     epClient.setUnpack(_dns_reply_unpack);
 
     auto queryDomain = std::make_shared<std::string>(question);

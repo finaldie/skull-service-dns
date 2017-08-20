@@ -15,6 +15,11 @@ This is an example of skull service for building a Async DNS client.
 1. git clone $this_repo dns
 1. Use `skull service --import dns` to load this into your skull project
 
+## Custom Name Server
+Define a shell environment variable to specify a name server, e.g.:
+  * **SKULL_DNS_NS:** `192.168.1.1`
+  * **SKULL_DNS_NS:** `8.8.8.8`
+
 ## Screen Output
 ```console
 module(test): init

@@ -14,6 +14,7 @@
 using namespace skull::service::dns;
 
 #define MAX_DNS_REPLY_ADDRS 100
+#define DNS_NS              "SKULL_DNS_NS"
 
 // ====================== Internal Functions ===================================
 class UpdateJobdata {
@@ -371,17 +372,32 @@ void Cache::updateCache(skullcpp::Service& service, const std::string& domain,
 }
 
 void Cache::initNameServers() {
-    if (_res.nscount == 0) {
-        SKULLCPP_LOG_FATAL("Init", "Not found any name server, exit", "");
-        exit(1);
+    // If ENV 'SKULL_DNS_NS' has value, will push this one into first record
+    const char* ns = getenv(DNS_NS);
+    if (ns) {
+        SKULLCPP_LOG_INFO("Init", "Init name server from ENV: " << ns << std::endl)
+        this->nservers_.push_back(ns);
     }
 
-    for (int i = 0; i < _res.nscount; i++) {
-        char ip [INET_ADDRSTRLEN];
-        inet_ntop(AF_INET, &_res.nsaddr_list[i].sin_addr, ip, INET_ADDRSTRLEN);
+    // If resolv.conf has nameservers, then push them into list
+    if (_res.nscount == 0) {
+        SKULLCPP_LOG_WARN("Init", "Not found any name server from resolv.conf", "");
+    } else {
+        for (int i = 0; i < _res.nscount; i++) {
+            char ip [INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, &_res.nsaddr_list[i].sin_addr, ip, INET_ADDRSTRLEN);
 
-        SKULLCPP_LOG_INFO("Init", "init name server: " << ip << std::endl)
-        this->nservers_.push_back(ip);
+            SKULLCPP_LOG_INFO("Init", "Init name server from resolv.conf: "
+                              << ip << std::endl)
+
+            this->nservers_.push_back(ip);
+        }
+    }
+
+    if (this->nservers_.empty()) {
+        SKULLCPP_LOG_FATAL("Init", "Not found any name server",
+                           "Check resolv.conf whether correct or define a ENV var");
+        exit(1);
     }
 }
 

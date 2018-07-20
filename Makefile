@@ -11,7 +11,7 @@ DEPS_LIBS += \
     -lcares \
     -lresolv \
     -lprotobuf \
-    -lskullcpp-api \
+    -lskull-api-cpp \
     -Wl,--no-as-needed \
     -lskull-common-cpp
 

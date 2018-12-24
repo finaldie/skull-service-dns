@@ -28,8 +28,8 @@ void test_nocache()
     utSvc.run("query", apiReq, apiResp);
 
     // 4. validate api response data
-    SKULL_CUNIT_ASSERT(apiResp.has_code() == false);
-    SKULL_CUNIT_ASSERT(apiResp.has_error() == false);
+    SKULL_CUNIT_ASSERT(apiResp.code() == 0);
+    SKULL_CUNIT_ASSERT(apiResp.error().empty());
     SKULL_CUNIT_ASSERT(apiResp.record_size() == 0);
 }
 

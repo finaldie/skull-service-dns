@@ -4,22 +4,24 @@
 //     some sub-messages, write them after the top message
 //  - Do not use 'requried' field
 
+syntax = "proto3";
+
 package skull.service.dns;
 
 message query_resp {
     // 0: OK
     // 1: Error
-    optional int32  code   = 1 [default = 0];
+    int32  code   = 1;
 
     // If code == 1, the detail error message will be filled
-    optional string error  = 2;
+    string error  = 2;
 
     // If code == 0, the ip of the requested domain will be filled
     repeated Record record = 3;
 }
 
 message Record {
-    optional string ip  = 1;
-    optional int32  ttl = 2;
+    string ip  = 1;
+    int32  ttl = 2;
 }
 

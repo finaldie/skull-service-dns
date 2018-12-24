@@ -4,9 +4,11 @@
 //  - Top message is the main message structure we use, if you want to define
 //     some sub-messages, write them after the top message
 
+syntax = "proto3";
+
 package skull.service.dns;
 
 message query_req {
-    optional string question = 1;
-    optional int32  qtype    = 2; // 1: A, 2: AAAA
+    string question = 1;
+    int32  qtype    = 2; // 1: A, 2: AAAA
 }
